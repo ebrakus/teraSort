@@ -8,5 +8,5 @@
 #define BASE_SERVER_PORT 5000
 #define BATCH_SIZE 1024*1024
 #define DOMAIN_NAME_SIZE 256
-#define MESH_SIZE 10
+#define MESH_SIZE 2
 #endif

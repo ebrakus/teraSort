@@ -10,6 +10,9 @@
 #include <unistd.h>
 #include <string.h>
 #include <pthread.h>
+#include <sys/ioctl.h>
+#include <netinet/in.h>
+#include <net/if.h>
 #include "config.h"
 
 int self_id = 0;
@@ -17,6 +20,19 @@ int self_id = 0;
 long double find_sec_elapsed(struct timeval end, struct timeval start) {
     long double diff = end.tv_sec - start.tv_sec + ((float)(end.tv_usec - start.tv_usec))/1000000;
     return diff;
+}
+
+struct in_addr find_eth0_ip_address() {
+    int fd;
+    struct ifreq ifr;
+
+    fd = socket(AF_INET, SOCK_DGRAM, 0);
+    ifr.ifr_addr.sa_family = AF_INET;
+    strncpy(ifr.ifr_name, "eth0", IFNAMSIZ-1);
+    ioctl(fd, SIOCGIFADDR, &ifr);
+    close(fd);
+    //printf("%s\n", inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr));
+    return ((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr;
 }
 
 char* build_domain_name(int serial_no) {
@@ -61,12 +77,10 @@ int find_sockaddr(struct sockaddr_in* address, char* domain_name, int port) {
         p = p->ai_next;
     }
 
-#if 0
     // convert the IP to a string and print it:
     char ipstr[INET_ADDRSTRLEN];
-    inet_ntop(AF_INET, &echoServAddr.sin_addr, ipstr, sizeof(ipstr));
-    printf("IP address = %s\n", ipstr);
-#endif
+    inet_ntop(AF_INET, &address->sin_addr, ipstr, sizeof(ipstr));
+    printf("IP address = %s -- %s\n", ipstr, domain_name);
     return 0;
 }
 
@@ -107,6 +121,7 @@ void* run_server_thread(void* addr) {
     serv_addr.sin_addr.s_addr = inet_addr(info->ip_addr);//htonl(INADDR_ANY);
     serv_addr.sin_port = htons(5001 + info->serial_no); 
 #endif
+    serv_addr->sin_addr = find_eth0_ip_address();
 
     /* Binding the socket to the appropriate IP and port */
     bind(listenfd, (struct sockaddr*)serv_addr, sizeof(struct sockaddr_in)); 
