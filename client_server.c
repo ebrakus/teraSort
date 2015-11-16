@@ -72,22 +72,23 @@ int find_sockaddr(struct sockaddr_in* address, char* domain_name, int port) {
 
 int find_id_from_hostname(char* hostname) {
     int i;
-    int flag = 0;
     char str_serial_no[15];
-
-    for(i = strlen("megasort"); i < DOMAIN_NAME_SIZE; i++) {
-        if(hostname[i] == '.') {
-            flag = 1;
-            break;
-        }
-        str_serial_no[i - strlen("megasort")] = hostname[i];
-    }
-    
-    if(flag == 1) {
-        return atoi(str_serial_no);
-    }else {
+    char temp[15];
+    char str_megasort[] = "megasort";
+    int len_megasort = strlen(str_megasort);
+    memcpy(temp, hostname, len_megasort);
+    if(strncmp(temp, str_megasort, len_megasort) != 0) {
         return 0;
     }
+
+    for(i = len_megasort; i < strlen(hostname); i++) {
+        if(str_serial_no[i-len_megasort] == '.') {
+            break;
+        }
+        str_serial_no[i - len_megasort] = hostname[i];
+    }
+    
+    return atoi(str_serial_no);
 }
 
 
@@ -192,6 +193,10 @@ int main(int argc, char* argv[])
 
     gethostname(self_hostname, DOMAIN_NAME_SIZE - 1);
     self_id = find_id_from_hostname(self_hostname);
+    if(self_id == 0) {
+        printf("Unexpected hostname: %s\n", self_hostname);
+        return 0;
+    }
 
     for(i = 0; i < MESH_SIZE; i++) {
         if(i == self_id) {
