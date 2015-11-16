@@ -142,7 +142,7 @@ void* run_client_thread(void* num) {
     char echoString[BATCH_SIZE];
     int* serial_no = (int*)num;
 
-    rc = find_sockaddr(&echoServAddr, build_domain_name(*serial_no), BASE_CLIENT_PORT + *serial_no);
+    rc = find_sockaddr(&echoServAddr, build_domain_name(*serial_no), BASE_CLIENT_PORT + self_id);
     if(rc != 0) {
         printf("Unable to retrieve sokaddr %d\n", rc);
         return NULL;
