@@ -198,32 +198,35 @@ int main(int argc, char* argv[])
         return 0;
     }
 
-    for(i = 0; i < MESH_SIZE; i++) {
+    for(i = 1; i < MESH_SIZE+1; i++) {
         if(i == self_id) {
             continue;
         }
-        serial_no[i] = i; 
-        rc = pthread_create(&client_thread[i], NULL, run_client_thread, (void*)&serial_no[i]);
+        serial_no[i - 1] = i; 
+        rc = pthread_create(&client_thread[i - 1], NULL, run_client_thread, (void*)&serial_no[i - 1]);
         if(rc != 0) {
             printf("Failed to create client thread\n");
             return 0;
         }
 
-        serv_addr[i] = malloc(sizeof(struct sockaddr_in));
-        if(find_sockaddr(serv_addr[i], build_domain_name(self_id), BASE_SERVER_PORT + i) != 0) {
+        serv_addr[i - 1] = malloc(sizeof(struct sockaddr_in));
+        if(find_sockaddr(serv_addr[i - 1], build_domain_name(self_id), BASE_SERVER_PORT + i) != 0) {
             printf("Unable to retrieve sockaddr\n");
             return 0;
         }
-        rc = pthread_create(&server_thread[i], NULL, run_server_thread, (void*)&serv_addr[i]);
+        rc = pthread_create(&server_thread[i - 1], NULL, run_server_thread, (void*)&serv_addr[i - 1]);
         if(rc != 0) {
             printf("Failed to create server thread\n");
             return 0;
         }
     }
 
-    for(i = 0; i < MESH_SIZE; i++) {
-        pthread_join(client_thread[i], &res); 
-        pthread_join(server_thread[i], &res); 
+    for(i = 1; i < MESH_SIZE+1; i++) {
+        if(i == self_id) {
+            continue;
+        }
+        pthread_join(client_thread[i-1], &res);
+        pthread_join(server_thread[i-1], &res);
     }
     return 0;
 }
