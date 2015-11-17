@@ -76,6 +76,7 @@ int find_sockaddr(struct sockaddr_in* address, char* domain_name, int port) {
         }
         p = p->ai_next;
     }
+    printf("%d\n", ntohs(address->sin_port));
 
     // convert the IP to a string and print it:
     char ipstr[INET_ADDRSTRLEN];
@@ -106,25 +107,24 @@ int find_id_from_hostname(char* hostname) {
 }
 
 
-void* run_server_thread(void* addr) {
+void* run_server_thread(void* other_no) {
     int listenfd = 0, connfd = 0;
     int n;
     char recvBuff[BATCH_SIZE];
     unsigned long long int sum=0;
-    struct sockaddr_in* serv_addr = (struct sockaddr_in*)addr;
+    int* port = (int*)other_no;
+    struct sockaddr_in serv_addr;
 
     /* Create a TCP socket */
     listenfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
-#if 0
     serv_addr.sin_family = AF_INET;
-    serv_addr.sin_addr.s_addr = inet_addr(info->ip_addr);//htonl(INADDR_ANY);
-    serv_addr.sin_port = htons(5001 + info->serial_no); 
-#endif
-    serv_addr->sin_addr = find_eth0_ip_address();
+    //serv_addr.sin_addr.s_addr = inet_addr(info->ip_addr);//htonl(INADDR_ANY);
+    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    serv_addr.sin_port = htons(*port); 
 
     /* Binding the socket to the appropriate IP and port */
-    bind(listenfd, (struct sockaddr*)serv_addr, sizeof(struct sockaddr_in)); 
+    bind(listenfd, (struct sockaddr*)&serv_addr, sizeof(struct sockaddr_in)); 
     listen(listenfd, 10); 
 
     /* Waiting for the client connection */
@@ -144,7 +144,7 @@ void* run_server_thread(void* addr) {
     long double diff = find_sec_elapsed(end, start);
     double bw = (sum*8)/diff ;
 
-    printf("\n\nBandwidth[%d: %d]:%f Mbps\n", self_id, ntohs(serv_addr->sin_port) - BASE_SERVER_PORT, bw);
+    printf("\n\nBandwidth[%d: %d]:%f Mbps\n", self_id, *port - BASE_SERVER_PORT, bw);
     
     close(connfd);  //Closing the connection
     sleep(1);
@@ -188,12 +188,14 @@ void* run_client_thread(void* num) {
     fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);  
     if(fd == -1){
         printf("Can't open socket\n");
+        return NULL;
     }
 
+    printf("Before connect\n");
     /* Establish the connection to the echo server */
-    if (connect(fd, (struct sockaddr *)&echoServAddr, sizeof(struct sockaddr_in)) < 0){
+    while (connect(fd, (struct sockaddr *)&echoServAddr, sizeof(struct sockaddr_in)) < 0){
         printf("Connect failed");
-        return NULL;
+        sleep(1);
     }
     printf("Connected\n");
 
@@ -201,7 +203,7 @@ void* run_client_thread(void* num) {
      * Keep sending 1MB of data to the server continuously
      */
     int i = 0;
-    while(i < 1000){
+    while(i < 100){
         j = send(fd, echoString, BATCH_SIZE, 0);
         i++;
     }
@@ -216,8 +218,8 @@ int main(int argc, char* argv[])
     void *res;
     pthread_t client_thread[MESH_SIZE], server_thread[MESH_SIZE];
     int serial_no[MESH_SIZE];
+    int other_no[MESH_SIZE];
     char self_hostname[DOMAIN_NAME_SIZE];
-    struct sockaddr_in* serv_addr[MESH_SIZE];
 
     gethostname(self_hostname, DOMAIN_NAME_SIZE - 1);
     self_id = find_id_from_hostname(self_hostname);
@@ -237,12 +239,13 @@ int main(int argc, char* argv[])
             return 0;
         }
 
-        serv_addr[i - 1] = malloc(sizeof(struct sockaddr_in));
+        /*serv_addr[i - 1] = malloc(sizeof(struct sockaddr_in));
         if(find_sockaddr(serv_addr[i - 1], build_domain_name(self_id), BASE_SERVER_PORT + i) != 0) {
             printf("Unable to retrieve sockaddr\n");
             return 0;
-        }
-        rc = pthread_create(&server_thread[i - 1], NULL, run_server_thread, (void*)&serv_addr[i - 1]);
+        }*/
+        other_no[i-1] = BASE_SERVER_PORT + i;
+        rc = pthread_create(&server_thread[i - 1], NULL, run_server_thread, (void*)&other_no[i - 1]);
         if(rc != 0) {
             printf("Failed to create server thread\n");
             return 0;
