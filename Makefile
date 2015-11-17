@@ -12,7 +12,7 @@ OS = LINUX
 CCFLAGS = -Wall $(DEBUG) -D$(OS)
 
 # add object file names here
-OBJS = client_server.o
+OBJS = client_server.o utils.o
 
 all: client_new
 
