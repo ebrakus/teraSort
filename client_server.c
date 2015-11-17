@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include "utils.h"
 
 int self_id = 0;
@@ -14,7 +15,6 @@ void* run_server_thread(void* other_no) {
     listenfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
     serv_addr.sin_family = AF_INET;
-    //serv_addr.sin_addr.s_addr = inet_addr(info->ip_addr);//htonl(INADDR_ANY);
     serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
     serv_addr.sin_port = htons(*port); 
 
@@ -30,9 +30,10 @@ void* run_server_thread(void* other_no) {
     /* Take the starting measurement */
     struct timeval start, end;
     gettimeofday(&start, NULL);
-    while((n = read(connfd, recvBuff, 1*1024*1024)) > 0)  //Receive 4 MB of data from the client
+    while((n = read(connfd, recvBuff, BATCH_SIZE)) > 0) 
     {
-        sum+=strlen(recvBuff);
+        sum+=n;
+        pthread_yield();
         /* End measurement */
     }
     gettimeofday(&end, NULL);
@@ -61,15 +62,10 @@ void* run_client_thread(void* num) {
         return NULL;
     }
 
-    //char ipstr[INET_ADDRSTRLEN];
-    //inet_ntop(AF_INET, &echoServAddr.sin_addr, ipstr, sizeof(ipstr));
-
     printf("%d %d\n", ntohs(echoServAddr.sin_port), echoServAddr.sin_family);
 
     /* Construct the server address structure */
-    //memset(&echoServAddr, 0, sizeof(echoServAddr));     /* Zero out structure */
     echoServAddr.sin_family      = AF_INET;             /* Internet address family */
-    //echoServAddr.sin_addr.s_addr = inet_addr(ipstr);   /* Server IP address */
     echoServAddr.sin_port        = htons(BASE_CLIENT_PORT + self_id); /* Server port */
 
     /*
@@ -99,9 +95,10 @@ void* run_client_thread(void* num) {
      * Keep sending 1MB of data to the server continuously
      */
     int i = 0;
-    while(i < 1000){
+    while(i < 1024){
         j = send(fd, echoString, BATCH_SIZE, 0);
         i++;
+        pthread_yield();
     }
     /* Gracefully close the connection */
     shutdown(fd, 1);
