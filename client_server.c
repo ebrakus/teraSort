@@ -71,7 +71,7 @@ int find_sockaddr(struct sockaddr_in* address, char* domain_name, int port) {
     struct addrinfo *p = res;
     while(p != NULL) {
         if(p->ai_family == AF_INET) {
-            address = ((struct sockaddr_in*)p->ai_addr);
+            memcpy(address, p->ai_addr, sizeof(struct sockaddr_in));
             break;
         }
         p = p->ai_next;
@@ -142,8 +142,9 @@ void* run_server_thread(void* other_no) {
     }
     gettimeofday(&end, NULL);
     long double diff = find_sec_elapsed(end, start);
-    double bw = (sum*8)/diff ;
+    double bw = (sum*8)/diff;
 
+    printf("Time elapsed = %ld\n", diff);
     printf("\n\nBandwidth[%d: %d]:%f Mbps\n", self_id, *port - BASE_SERVER_PORT, bw);
     
     close(connfd);  //Closing the connection
@@ -168,7 +169,7 @@ void* run_client_thread(void* num) {
     //char ipstr[INET_ADDRSTRLEN];
     //inet_ntop(AF_INET, &echoServAddr.sin_addr, ipstr, sizeof(ipstr));
 
-    printf("%d %d\n", echoServAddr.sin_port, echoServAddr.sin_family);
+    printf("%d %d\n", ntohs(echoServAddr.sin_port), echoServAddr.sin_family);
 
     /* Construct the server address structure */
     //memset(&echoServAddr, 0, sizeof(echoServAddr));     /* Zero out structure */
