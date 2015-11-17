@@ -128,7 +128,9 @@ void* run_server_thread(void* addr) {
     listen(listenfd, 10); 
 
     /* Waiting for the client connection */
+    printf("Before accept\n");
     connfd = accept(listenfd, (struct sockaddr*)NULL, NULL); 
+    printf("Wait over\n");
 
     /* Take the starting measurement */
     struct timeval start, end;
@@ -162,6 +164,17 @@ void* run_client_thread(void* num) {
         printf("Unable to retrieve sokaddr %d\n", rc);
         return NULL;
     }
+
+    //char ipstr[INET_ADDRSTRLEN];
+    //inet_ntop(AF_INET, &echoServAddr.sin_addr, ipstr, sizeof(ipstr));
+
+    printf("%d %d\n", echoServAddr.sin_port, echoServAddr.sin_family);
+
+    /* Construct the server address structure */
+    //memset(&echoServAddr, 0, sizeof(echoServAddr));     /* Zero out structure */
+    echoServAddr.sin_family      = AF_INET;             /* Internet address family */
+    //echoServAddr.sin_addr.s_addr = inet_addr(ipstr);   /* Server IP address */
+    echoServAddr.sin_port        = htons(BASE_CLIENT_PORT + self_id); /* Server port */
 
     /*
      * Create a 1MB of data to be sent to the server 
