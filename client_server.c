@@ -142,9 +142,9 @@ void* run_server_thread(void* other_no) {
     }
     gettimeofday(&end, NULL);
     long double diff = find_sec_elapsed(end, start);
-    double bw = (sum*8)/diff;
+    double bw = ((sum*8)/diff)/(1024*1024);
 
-    printf("Time elapsed = %ld\n", diff);
+    printf("Time elapsed = %Le\n", diff);
     printf("\n\nBandwidth[%d: %d]:%f Mbps\n", self_id, *port - BASE_SERVER_PORT, bw);
     
     close(connfd);  //Closing the connection
@@ -204,7 +204,7 @@ void* run_client_thread(void* num) {
      * Keep sending 1MB of data to the server continuously
      */
     int i = 0;
-    while(i < 100){
+    while(i < 1000){
         j = send(fd, echoString, BATCH_SIZE, 0);
         i++;
     }
