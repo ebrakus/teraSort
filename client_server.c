@@ -6,7 +6,7 @@ int self_id = 0;
 
 void* run_server_thread(void* client) {
     struct client_socket_info client_info = *(struct client_socket_info*)client;
-    printf("%d, %d\n", client_info.connfd, ntohs(client_info.client_addr.sin_port));
+    fprintf(stderr, "%d, %d\n", client_info.connfd, ntohs(client_info.client_addr.sin_port));
 
     int n;
     char recvBuff[BATCH_SIZE];
@@ -23,7 +23,7 @@ void* run_server_thread(void* client) {
     gettimeofday(&end, NULL);
     long double diff = find_sec_elapsed(end, start);
     double bw = ((sum*8)/diff)/(1024*1024);
-    printf("\n\n(Time elapsed = %Le) - Bandwidth[%d: %d]:%f Mbps\n", diff, self_id, ntohs(client_info.client_addr.sin_port) - BASE_SERVER_PORT, bw);
+    printf("\n\n(Time elapsed = %Le) - Bandwidth[%d: %d]:%f Mbps\n", diff, self_id, ntohs(client_info.client_addr.sin_port), bw);
     
     close(client_info.connfd);  //Closing the connection
     sleep(1);
@@ -49,11 +49,10 @@ void* run_server() {
     listen(listenfd, 10); 
 
     /* Waiting for the client connection */
-    printf("Before accept\n");
     int count = 0;
     while(1) {
         client[count].connfd = accept(listenfd, (struct sockaddr*)&(client[count].client_addr), &len);
-        printf("Wait over %d\n", count);
+        fprintf(stderr, "Wait over %d\n", count);
         pthread_create(&server_threads[count], NULL, run_server_thread, (void*)&client[count]);
         count = (count+1)%MAX_CLIENT_SUPPORT;
     }
@@ -71,17 +70,9 @@ void* run_client_thread(void* num) {
 
     rc = find_sockaddr(&echoServAddr, build_domain_name(serial_no), BASE_CLIENT_PORT + serial_no);
     if(rc != 0) {
-        printf("Unable to retrieve sokaddr %d\n", rc);
+        fprintf(stderr, "Unable to retrieve sokaddr %d\n", rc);
         return NULL;
     }
-
-#if 0
-    printf("%d %d\n", ntohs(echoServAddr.sin_port), echoServAddr.sin_family);
-
-    /* Construct the server address structure */
-    echoServAddr.sin_family      = AF_INET;             /* Internet address family */
-    echoServAddr.sin_port        = htons(BASE_CLIENT_PORT + serial_no); /* Server port */
-#endif
 
     /*
      * Create a 1MB of data to be sent to the server 
@@ -94,17 +85,16 @@ void* run_client_thread(void* num) {
     /* Create a TCP socket */
     fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);  
     if(fd == -1){
-        printf("Can't open socket\n");
+        fprintf(stderr, "Can't open socket\n");
         return NULL;
     }
 
-    printf("Before connect\n");
     /* Establish the connection to the echo server */
     while (connect(fd, (struct sockaddr *)&echoServAddr, sizeof(struct sockaddr_in)) < 0){
-        printf("Connect failed");
+        fprintf(stderr, "Connect failed\n");
         sleep(1);
     }
-    printf("Connected\n");
+    fprintf(stderr, "Connected\n");
 
     /*
      * Keep sending 1MB of data to the server continuously
@@ -131,7 +121,7 @@ int main(int argc, char* argv[])
     gethostname(self_hostname, DOMAIN_NAME_SIZE - 1);
     self_id = find_id_from_hostname(self_hostname);
     if(self_id == 0) {
-        printf("Unexpected hostname: %s\n", self_hostname);
+        fprintf(stderr, "Unexpected hostname: %s\n", self_hostname);
         return 0;
     }
 
@@ -142,18 +132,13 @@ int main(int argc, char* argv[])
         serial_no[i - 1] = i; 
         rc = pthread_create(&client_thread[i - 1], NULL, run_client_thread, (void*)&serial_no[i - 1]);
         if(rc != 0) {
-            printf("Failed to create client thread\n");
+            fprintf(stderr, "Failed to create client thread\n");
             return 0;
         }
 
-        /*serv_addr[i - 1] = malloc(sizeof(struct sockaddr_in));
-        if(find_sockaddr(serv_addr[i - 1], build_domain_name(self_id), BASE_SERVER_PORT + i) != 0) {
-            printf("Unable to retrieve sockaddr\n");
-            return 0;
-        }*/
         rc = pthread_create(&server_thread, NULL, run_server, (void*)0);
         if(rc != 0) {
-            printf("Failed to create server thread\n");
+            fprintf(stderr, "Failed to create server thread\n");
             return 0;
         }
     }
