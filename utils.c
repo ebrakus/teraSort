@@ -59,7 +59,6 @@ int find_sockaddr(struct sockaddr_in* address, char* domain_name, int port) {
         }
         p = p->ai_next;
     }
-    printf("%d\n", ntohs(address->sin_port));
 
     // convert the IP to a string and print it:
     char ipstr[INET_ADDRSTRLEN];
