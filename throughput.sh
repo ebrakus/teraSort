@@ -23,7 +23,7 @@ dec2ip () {
 }
 
 netperf_temp () {
-    BW=$(netperf -l 60 -H $1 -p $2 -t TCP_STREAM -P 0 -v 0 -- -m 1436)
+    BW=$(netperf -l 120 -H $1 -p $2 -t TCP_STREAM -P 0 -v 0 -- -m 1436)
     echo $3 $BW
 }
 
