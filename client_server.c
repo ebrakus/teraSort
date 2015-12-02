@@ -101,7 +101,7 @@ void* run_client_thread(void* num) {
      * Keep sending 1MB of data to the server continuously
      */
     int i = 0;
-    while(i < 1024){
+    while(i < ITERATIONS){
         j = send(fd, echoString, BATCH_SIZE, 0);
         i++;
         pthread_yield();
