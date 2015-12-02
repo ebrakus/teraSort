@@ -20,3 +20,4 @@ struct in_addr find_eth0_ip_address();
 char* build_domain_name(int serial_no);
 int find_sockaddr(struct sockaddr_in* address, char* domain_name, int port);
 int find_id_from_hostname(char* hostname);
+int find_sockaddr_temp(struct sockaddr_in* address, int num, int port);

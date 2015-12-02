@@ -88,4 +88,16 @@ int find_id_from_hostname(char* hostname) {
     return atoi(str_serial_no);
 }
 
+int find_sockaddr_temp(struct sockaddr_in* address, int num, int port) {
+    memset(address, 0, sizeof(struct sockaddr_in));     /* Zero out structure */
+    address->sin_family      = AF_INET;             /* Internet address family */
+    address->sin_addr.s_addr = htonl(BASE_IP + num);   /* Server IP address */
+    address->sin_port        = htons(port); /* Server port */
 
+
+    // convert the IP to a string and print it:
+    char ipstr[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &address->sin_addr, ipstr, sizeof(ipstr));
+    printf("IP address = %s -- %d\n", ipstr, num);
+    return 0;
+}

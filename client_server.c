@@ -68,7 +68,8 @@ void* run_client_thread(void* num) {
     char echoString[BATCH_SIZE];
     int serial_no = *(int*)num;
 
-    rc = find_sockaddr(&echoServAddr, build_domain_name(serial_no), BASE_CLIENT_PORT + serial_no);
+    //rc = find_sockaddr(&echoServAddr, build_domain_name(serial_no), BASE_CLIENT_PORT + serial_no);
+    rc = find_sockaddr_temp(&echoServAddr, serial_no, BASE_CLIENT_PORT + serial_no);
     if(rc != 0) {
         fprintf(stderr, "Unable to retrieve sokaddr %d\n", rc);
         return NULL;
@@ -116,39 +117,45 @@ int main(int argc, char* argv[])
     void *res;
     pthread_t client_thread[MESH_SIZE], server_thread;
     int serial_no[MESH_SIZE];
-    char self_hostname[DOMAIN_NAME_SIZE];
+    /*char self_hostname[DOMAIN_NAME_SIZE];
 
     gethostname(self_hostname, DOMAIN_NAME_SIZE - 1);
     self_id = find_id_from_hostname(self_hostname);
+    printf("%d\n", self_id);
     if(self_id == 0) {
         fprintf(stderr, "Unexpected hostname: %s\n", self_hostname);
         return 0;
-    }
+    }*/
 
-    for(i = 1; i < MESH_SIZE+1; i++) {
+    struct in_addr p = find_eth0_ip_address();
+
+    self_id = ntohl(p.s_addr) - BASE_IP;
+    printf("Self-id %d\n", self_id);
+
+    for(i = 0; i < MESH_SIZE; i++) {
         if(i == self_id) {
             continue;
         }
-        serial_no[i - 1] = i; 
-        rc = pthread_create(&client_thread[i - 1], NULL, run_client_thread, (void*)&serial_no[i - 1]);
+        serial_no[i] = i; 
+        rc = pthread_create(&client_thread[i], NULL, run_client_thread, (void*)&serial_no[i]);
         if(rc != 0) {
             fprintf(stderr, "Failed to create client thread\n");
             return 0;
         }
+    }
 
-        rc = pthread_create(&server_thread, NULL, run_server, (void*)0);
-        if(rc != 0) {
-            fprintf(stderr, "Failed to create server thread\n");
-            return 0;
-        }
+    rc = pthread_create(&server_thread, NULL, run_server, (void*)0);
+    if(rc != 0) {
+        fprintf(stderr, "Failed to create server thread\n");
+        return 0;
     }
 
     pthread_join(server_thread, &res);
-    for(i = 1; i < MESH_SIZE+1; i++) {
+    for(i = 0; i < MESH_SIZE; i++) {
         if(i == self_id) {
             continue;
         }
-        pthread_join(client_thread[i-1], &res);
+        pthread_join(client_thread[i], &res);
     }
     return 0;
 }
