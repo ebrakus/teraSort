@@ -23,7 +23,7 @@ void* run_server_thread(void* client) {
     gettimeofday(&end, NULL);
     long double diff = find_sec_elapsed(end, start);
     double bw = ((sum*8)/diff)/(1024*1024);
-    printf("\n\n(Time elapsed = %Le) - Bandwidth[%d: %d]:%f Mbps\n", diff, self_id, ntohs(client_info.client_addr.sin_port), bw);
+    printf("\n\n(Time elapsed = %Le) - Bandwidth[%d: %d]:%f Mbps\n", diff, self_id, ntohl(client_info.client_addr.sin_addr.s_addr) - BASE_IP, bw);
     
     close(client_info.connfd);  //Closing the connection
     sleep(1);
@@ -92,7 +92,7 @@ void* run_client_thread(void* num) {
 
     /* Establish the connection to the echo server */
     while (connect(fd, (struct sockaddr *)&echoServAddr, sizeof(struct sockaddr_in)) < 0){
-        fprintf(stderr, "Connect failed\n");
+        //fprintf(stderr, "Connect failed\n");
         sleep(1);
     }
     fprintf(stderr, "Connected\n");
