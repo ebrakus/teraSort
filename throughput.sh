@@ -31,7 +31,7 @@ SELF_IP=$(/sbin/ifconfig eth0 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $
 SELF_IP_N=$(ip2dec $SELF_IP)
 SELF_ID=$((SELF_IP_N-IP))
 
-for i in {0..9}
+for i in {0..19}
 do
     if [ $i -eq $SELF_ID ]
     then
