@@ -1,8 +1,6 @@
 #!/bin/bash
 
 IP=167772164
-MESH_SIZE=$1
-PORT=5001
 
 ip2dec () {
     local a b c d ip=$@
@@ -10,26 +8,12 @@ ip2dec () {
     printf '%d\n' "$((a * 256 ** 3 + b * 256 ** 2 + c * 256 + d))"
 }
 
-dec2ip () {
-    local ip dec=$@
-    for e in {3..0}
-    do
-        ((octet = dec / (256 ** e) ))
-        ((dec -= octet * 256 ** e))
-        ip+=$delim$octet
-        delim=.
-    done
-    printf '%s\n' "$ip"
-}
-
-netperf_temp () {
-    BW=$(netperf -l 120 -H $1 -p $2 -t TCP_STREAM -P 0 -v 0 -D 1 -- -m 1436)
-    echo $3 $BW
-}
-
 SELF_IP=$(/sbin/ifconfig eth0 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}')
 SELF_IP_N=$(ip2dec $SELF_IP)
 SELF_ID=$((SELF_IP_N-IP))
+
+echo $SELF_ID
+
 
 for i in {0..9}
 do
@@ -39,6 +23,9 @@ do
         continue
     fi
     FILE_NAME="in$(printf '%03d' $i)"
-    IP_ADD=$(dec2ip $((IP+i)))
-    netperf_temp $IP_ADD $PORT $i > $FILE_NAME &
+    FILE_NAME_OUT="out$(printf '%03d' $i)"
+
+    vim -s test.keys $FILE_NAME
+    cat $FILE_NAME | awk '{print $3, $6}' > $FILE_NAME_OUT
 done
+
