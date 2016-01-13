@@ -1,16 +1,7 @@
 #!/bin/bash
 
-IP=167772164
-
-ip2dec () {
-    local a b c d ip=$@
-    IFS=. read -r a b c d <<< "$ip"
-    printf '%d\n' "$((a * 256 ** 3 + b * 256 ** 2 + c * 256 + d))"
-}
-
-SELF_IP=$(/sbin/ifconfig eth0 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}')
-SELF_IP_N=$(ip2dec $SELF_IP)
-SELF_ID=$((SELF_IP_N-IP))
+SELF_NAME=$(hostname)
+SELF_ID=${SELF_NAME:1:1}
 
 echo $SELF_ID
 
